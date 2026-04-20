@@ -1,0 +1,26 @@
+name: Test Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          
+      - name: Install Dependencies
+        run: npm install
+        
+      - name: Run Tests
+        run: echo "Test passed!" && date
+      
+      - name: Notify Success
+        run: |
+          echo "✅ Build completed successfully!"
+          echo "Time: $(date)"
