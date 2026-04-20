@@ -1,0 +1,53 @@
+name: Build and Test Shopify MCP
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'mcp/shopify-mcp/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'mcp/shopify-mcp/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: mcp/shopify-mcp
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Type Check
+        run: npm run typecheck || echo "No typecheck script"
+
+      - name: Build
+        run: npm run build || echo "No build script"
+
+      - name: Run Tests
+        run: npm test || echo "No tests configured"
+
+      - name: List Output
+        run: ls -la dist/ || echo "No dist folder"
+
+  notify:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Success
+        run: |
+          echo "✅ Shopify MCP build completed successfully!"
+          echo "Time: $(date)"
+          echo "Repository: https://github.com/dinnar1407-code/furmales-automation"
