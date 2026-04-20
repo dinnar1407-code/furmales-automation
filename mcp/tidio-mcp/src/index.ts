@@ -1,271 +1,113 @@
+#!/usr/bin/env node
 /**
  * FurMates Tidio MCP Server
- * 
- * AI-powered customer service via Tidio
- * 
- * To use:
- * 1. Set TIDIO_API_KEY in environment
- * 2. Set TIDIO_API_SECRET in environment
- * 3. Run: npm start
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Enables AI agents (Playfish / Claude Code) to autonomously manage
+ * FurMates customer service conversations via Tidio OpenAPI.
+ *
+ * Usage:
+ *   TIDIO_CLIENT_ID=ci_xxx \
+ *   TIDIO_CLIENT_SECRET=cs_xxx \
+ *   node dist/index.js
+ *
+ * Auth docs: https://developers.tidio.com/docs/openapi-authorization
  */
 
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
-  Tool,
-} from '@modelcontextprotocol/sdk/types.js';
+} from "@modelcontextprotocol/sdk/types.js";
 
-// Tool definitions
-const TOOLS: Tool[] = [
-  {
-    name: 'list_conversations',
-    description: 'List all active conversations in Tidio',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        status: { 
-          type: 'string', 
-          enum: ['active', 'inactive', 'closed', 'all'],
-          description: 'Conversation status filter',
-          default: 'active'
-        },
-        limit: { type: 'number', description: 'Number of conversations to return', default: 20 },
-      },
-    },
-  },
-  {
-    name: 'get_conversation',
-    description: 'Get details and messages of a specific conversation',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        id: { type: 'string', description: 'Conversation ID' },
-      },
-      required: ['id'],
-    },
-  },
-  {
-    name: 'send_message',
-    description: 'Send a message to a customer in Tidio',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        recipient_id: { type: 'string', description: 'Customer ID or email' },
-        message: { type: 'string', description: 'Message text to send' },
-        channel: { 
-          type: 'string', 
-          enum: ['chat', 'email'],
-          description: 'Channel to send via',
-          default: 'chat'
-        },
-      },
-      required: ['recipient_id', 'message'],
-    },
-  },
-  {
-    name: 'get_contact',
-    description: 'Get contact/customer information from Tidio',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        email: { type: 'string', description: 'Customer email' },
-        visitor_id: { type: 'string', description: 'Visitor ID' },
-      },
-      oneOf: [
-        { required: ['email'] },
-        { required: ['visitor_id'] },
-      ],
-    },
-  },
-  {
-    name: 'list_contacts',
-    description: 'List contacts in Tidio',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        limit: { type: 'number', description: 'Number of contacts to return', default: 20 },
-        offset: { type: 'number', description: 'Offset for pagination', default: 0 },
-      },
-    },
-  },
-  {
-    name: 'close_conversation',
-    description: 'Close a conversation in Tidio',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        id: { type: 'string', description: 'Conversation ID' },
-      },
-      required: ['id'],
-    },
-  },
-  {
-    name: 'mark_as_read',
-    description: 'Mark a conversation as read',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        id: { type: 'string', description: 'Conversation ID' },
-      },
-      required: ['id'],
-    },
-  },
-];
+import { createTidioClientFromEnv } from "./utils/tidio-client.js";
+import { createLogger } from "./utils/logger.js";
 
-// Create server
-const server = new Server(
-  {
-    name: 'furmales-tidio-mcp',
-    version: '1.0.0',
-  },
-  {
-    capabilities: {
-      tools: {},
-    },
-  }
-);
+import { conversationTools, handleConversationTool } from "./tools/conversations.js";
+import { messageTools, handleMessageTool } from "./tools/messages.js";
+import { contactTools, handleContactTool } from "./tools/contacts.js";
 
-// List tools handler
-server.setRequestHandler(ListToolsRequestSchema, async () => {
-  return { tools: TOOLS };
-});
+const log = createLogger("tidio-mcp");
 
-// Call tool handler
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  const { name, arguments: args } = request.params;
+// ─── Tool registry ────────────────────────────────────────────────────────────
 
-  try {
-    switch (name) {
-      case 'list_conversations':
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({
-                success: true,
-                message: 'Tidio MCP connected successfully!',
-                note: 'Configure TIDIO_API_KEY and TIDIO_API_SECRET to fetch real conversations',
-                conversations: [],
-              }, null, 2),
-            },
-          ],
-        };
+const ALL_TOOLS = [...conversationTools, ...messageTools, ...contactTools];
 
-      case 'get_conversation':
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({
-                success: true,
-                message: 'Configure TIDIO_API_KEY to fetch real conversation',
-                conversation: null,
-              }, null, 2),
-            },
-          ],
-        };
+const CONVERSATION_TOOL_NAMES = new Set(conversationTools.map((t) => t.name));
+const MESSAGE_TOOL_NAMES      = new Set(messageTools.map((t) => t.name));
+const CONTACT_TOOL_NAMES      = new Set(contactTools.map((t) => t.name));
 
-      case 'send_message':
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({
-                success: true,
-                message: 'Configure TIDIO_API_KEY to send real messages',
-                message_sent: args,
-              }, null, 2),
-            },
-          ],
-        };
+// ─── Server bootstrap ─────────────────────────────────────────────────────────
 
-      case 'get_contact':
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({
-                success: true,
-                message: 'Configure TIDIO_API_KEY to fetch real contact',
-                contact: null,
-              }, null, 2),
-            },
-          ],
-        };
-
-      case 'list_contacts':
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({
-                success: true,
-                message: 'Configure TIDIO_API_KEY to fetch real contacts',
-                contacts: [],
-              }, null, 2),
-            },
-          ],
-        };
-
-      case 'close_conversation':
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({
-                success: true,
-                message: 'Configure TIDIO_API_KEY to close real conversation',
-                conversation_id: args.id,
-              }, null, 2),
-            },
-          ],
-        };
-
-      case 'mark_as_read':
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({
-                success: true,
-                message: 'Configure TIDIO_API_KEY to mark as read',
-                conversation_id: args.id,
-              }, null, 2),
-            },
-          ],
-        };
-
-      default:
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({ error: `Unknown tool: ${name}` }),
-            },
-          ],
-          isError: true,
-        };
-    }
-  } catch (error) {
-    return {
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify({ error: String(error) }),
-        },
-      ],
-      isError: true,
-    };
-  }
-});
-
-// Start server
 async function main() {
+  log.info("Starting FurMates Tidio MCP Server...");
+
+  let tidioClient: ReturnType<typeof createTidioClientFromEnv>;
+  try {
+    tidioClient = createTidioClientFromEnv();
+    log.info("Tidio client initialized", {
+      clientId: process.env.TIDIO_CLIENT_ID?.slice(0, 10) + "...",
+    });
+  } catch (err) {
+    log.error("Failed to initialize Tidio client", { error: String(err) });
+    process.exit(1);
+  }
+
+  const server = new Server(
+    { name: "furmales-tidio-mcp", version: "1.0.0" },
+    { capabilities: { tools: {} } }
+  );
+
+  // ─── List tools ─────────────────────────────────────────────────────
+  server.setRequestHandler(ListToolsRequestSchema, async () => {
+    log.info(`Listing ${ALL_TOOLS.length} available tools`);
+    return { tools: ALL_TOOLS };
+  });
+
+  // ─── Call tool ──────────────────────────────────────────────────────
+  server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    const { name, arguments: args } = request.params;
+    const toolArgs = (args ?? {}) as Record<string, unknown>;
+
+    log.info(`Tool called: ${name}`, { args: toolArgs });
+
+    try {
+      if (CONVERSATION_TOOL_NAMES.has(name)) {
+        return await handleConversationTool(name, toolArgs, tidioClient);
+      }
+      if (MESSAGE_TOOL_NAMES.has(name)) {
+        return await handleMessageTool(name, toolArgs, tidioClient);
+      }
+      if (CONTACT_TOOL_NAMES.has(name)) {
+        return await handleContactTool(name, toolArgs, tidioClient);
+      }
+      throw new Error(`Unknown tool: ${name}`);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      log.error(`Tool execution failed: ${name}`, { error: msg });
+      return {
+        content: [{ type: "text", text: `❌ Error executing ${name}: ${msg}` }],
+        isError: true,
+      };
+    }
+  });
+
+  // ─── Connect stdio transport ─────────────────────────────────────────
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('FurMates Tidio MCP Server started');
+
+  log.info("FurMates Tidio MCP Server running", {
+    total_tools: ALL_TOOLS.length,
+    transport: "stdio",
+    categories: {
+      conversations: conversationTools.length,
+      messages: messageTools.length,
+      contacts: contactTools.length,
+    },
+  });
 }
 
-main().catch(console.error);
+main().catch((err) => {
+  console.error("Fatal:", err);
+  process.exit(1);
+});

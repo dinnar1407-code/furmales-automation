@@ -1,10 +1,27 @@
 {
   "name": "furmales-shopify-mcp",
   "version": "1.0.0",
-  "description": "FurMates Shopify MCP - 21 tools (products/orders/customers/inventory)",
+  "description": "FurMates Shopify MCP Server - AI control of Shopify store",
   "main": "dist/index.js",
-  "scripts": {"build":"tsc","start":"node dist/index.js","dev":"ts-node src/index.ts","test":"jest"},
-  "dependencies": {"@modelcontextprotocol/sdk":"^1.0.0","zod":"^3.22.4"},
-  "devDependencies": {"@types/node":"^20.0.0","typescript":"^5.3.0","ts-node":"^10.9.0","jest":"^29.0.0","@types/jest":"^29.0.0","ts-jest":"^29.0.0"},
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@shopify/shopify-api": "^9.0.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0",
+    "ts-node": "^10.9.0",
+    "jest": "^29.0.0",
+    "@types/jest": "^29.0.0",
+    "ts-jest": "^29.0.0"
+  },
+  "keywords": ["mcp", "shopify", "ai", "automation"],
   "license": "MIT"
 }
