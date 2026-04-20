@@ -1,0 +1,34 @@
+name: Claude Code Task Handler
+
+on:
+  issues:
+    types: [opened, assigned]
+  pull_request:
+    types: [opened]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Claude Code
+        run: |
+          echo "New task received!"
+          echo "Issue: ${{ github.event.issue.title }}"
+          echo "Body: ${{ github.event.issue.body }}"
+          
+          # This webhook can trigger Claude Code Mac A
+          # Configure your Claude Code to listen for this event
+          curl -X POST ${{ secrets.CLAUDE_CODE_WEBHOOK }} \
+            -H "Content-Type: application/json" \
+            -d '{"action": "new_task", "issue": "${{ github.event.issue.title }}", "body": "${{ github.event.issue.body }}"}'
+
+      - name: Add reaction
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.reactions.createForIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              content: 'eyes'
+            })
