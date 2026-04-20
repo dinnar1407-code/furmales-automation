@@ -25,11 +25,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: mcp/shopify-mcp/package-lock.json
       
       - name: Install dependencies
-        run: npm ci
+        run: npm install
       
       - name: Type check
         run: npm run typecheck || true
@@ -53,11 +51,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: mcp/tidio-mcp/package-lock.json
       
       - name: Install dependencies
-        run: npm ci
+        run: npm install
       
       - name: Type check
         run: npm run typecheck || true
