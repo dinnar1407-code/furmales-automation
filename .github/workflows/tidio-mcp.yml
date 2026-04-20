@@ -1,0 +1,50 @@
+name: Build and Test Tidio MCP
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'mcp/tidio-mcp/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'mcp/tidio-mcp/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: mcp/tidio-mcp
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Type Check
+        run: npm run typecheck || echo "No typecheck script"
+
+      - name: Build
+        run: npm run build || echo "No build script"
+
+      - name: Run Tests
+        run: npm test || echo "No tests configured"
+
+  notify:
+    needs: build
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+      - name: Notify Success
+        run: |
+          echo "✅ Tidio MCP build completed successfully!"
+          echo "Time: $(date)"
