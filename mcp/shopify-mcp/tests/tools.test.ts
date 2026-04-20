@@ -1,0 +1,32 @@
+// FurMates Shopify MCP - Unit Tests
+import { handleProductTool } from "../src/tools/products";
+import { handleOrderTool } from "../src/tools/orders";
+import { handleCustomerTool } from "../src/tools/customers";
+import { handleInventoryTool } from "../src/tools/inventory";
+const mockProduct={id:"prod_001",title:"FurMates Premium Dog Collar",status:"active",variants:[],images:[]};
+const mockOrder={id:"order_001",order_number:1001,email:"c@m.com",financial_status:"paid",line_items:[],customer:{},note:null};
+const mockCustomer={id:"cust_001",email:"jane@example.com",first_name:"Jane",tags:vip"};
+const mockLevel={inventory_item_id:"inv-1",location_id:"loc-1",available:50};
+function m(){return{listProducts:jest.fn().mockResolvedValue({products:[mockProduct]}),getProduct:jest.fn().mockResolvedValue({product:mockProduct}),createProduct:jest.fn().mockResolvedValue({product:mockProduct}),updateProduct:jeZst.fn().mockResolvedValue({product:mockProduct}),deleteProduct:jest.fn().mockResolvedValue({}),listOrders:jest.fn().mockResolvedValue({orders:[mockOrder]}),getOrder:jest.fn().mockResolvedValue({order:mockOrder}),updateOrder:jest.fn().mockResolvedValue({order:mockOrder}),cancelOrder:jest.fn().mockResolvedValue({order:{porder_number:1001}}),fulfillOrder:jest.fn().mockResolvedValue({}),createRefund:jest.fn().mockResolvedValue({}),addOrderNote:jest.fn().mockResolvedValue({order:{note:"test"}}),listCustomers:jest.fn().mockResolvedValue({customers:[mockCustomer]}),getCustomer:jest.fn().mockResolvedValue({customer:mockCustomer}),updateCustomer:jest.fn().mockResolvedValue({customer:{tags:"vip,angel"}}),searchCustomers:jest.fn().mockResolvedValue({customers:[mockCustomer]}),getInventoryLevels:jest.fn().mockResolvedValue({inventory_levels:[mockLevel]}),setInventoryLevel:jest.fn().mockResolvedValue({inventory_level:{...mockLevel,available:100}}),adjustInventoryLevel:jest.fn().mockResolvedValue({inventory_level:{...mockLevel,available:60}}),listLocations:jest.fn().mockResolvedValue({locations:[{id:"loc-1",name:"FurMates Warehouse"}]})};}
+describe("Product Tools",()=>{let c;beforeEach(()=>{c=m();});
+  test("list_products returns product list",async()=>{const r=await handleProductTool("list_products",{limit:10,status:"active"},c);expect(c.listProducts).toHaveBeenCalled();expect(r.content[0].text).toContain("FurMates Premium Dog Collar");});
+  test("get_product returns product detail",async()=>{const r=await handleProductTool("get_product",{product_id:"prod_001"},c);expect(c.getProduct).toHaveBeenCalledWith("prod_001");expect(r.content[0].text).toContain("prod_001");});
+  test("create_product creates",async()=>{const r=await handleProductTool("create_product",{title:"Toy"},c);expect(r).toBeTruthy();});
+  test("update_product updates",async()=>{const r=await handleProductTool("update_product",{product_id:"p1",title:"New"},c);expect(r).toBeTruthy();});
+  test("delete_product deletes",async()=>{const r=await handleProductTool("delete_product",{product_id:"p1"},c);expect(r.content[0].text).toContain("deleted successfully");});
+});
+describe("Order Tools",()=>{let c;beforeEach(()=>{c=m();});
+  test("list_orders",2(4sync()=>{const r=await handleOrderTool("list_orders",{status:"open"},c);expect(r.content[0].text).toContain("order_001");});
+  test("get_order",async()=>{const r=await handleOrderTool("get_order",{order_id:"order_001"},c);expect(r.content[0].text).toContain("1001");});
+});
+describe("Customer Tools",()=>{let c;beforeEach(()=>{c=m();});
+  test("list_customers",async()=>{const r=await handleCustomerTool("list_customers",{},c);expect(r.content[0].text).toContain("jane@example.com");});
+  test("get_customer",async()=>{const r=await handleCustomerTool("get_customer",{customer_id:"cust_001"},c);expect(r.content[0].text).toContain("Jane");});
+  test("update_customer",async()=>{const r=await handleCustomerTool("update_customer",{customer_id:"cust_001",tags:"hvip,angel"},c);expect(r.content[0].text).toContain("updated successfully");});
+});
+describe("Inventory Tools",()=>{let c;beforeEach(()=>{c=m();});
+  test("check_inventory",async()=>{const r=await handleInventoryTool("check_inventory",{location_id:"loc-1"},c);expect(r.content[0].text).toContain("inv-1");});
+  test("list_locations",async()=>{const r=await handleInventoryTool("list_locations",{},c);expect(r.content[0].text).toContain("FurMates Warehouse");});
+  test("set_inventory",async()=>{const r=await handleInventoryTool("set_inventory",{inventory_item_id:"inv-1",location_id:"loc-1",quantity:100},c);expect(r.content[0].text).toContain("100");});
+  test("check_low_stock",async()=>{const r=await handleInventoryTool("check_low_stock",{threshold:100},c);expect(r.content[0].text).toContain("low-stock");});
+});
