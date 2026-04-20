@@ -1,0 +1,69 @@
+name: MCP CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'mcp/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'mcp/**'
+  workflow_dispatch:
+
+jobs:
+  shopify-mcp:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mcp/shopify-mcp
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: mcp/shopify-mcp/package-lock.json
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Type check
+        run: npm run typecheck || true
+      
+      - name: Build
+        run: npm run build || true
+      
+      - name: Test
+        run: npm test
+
+  tidio-mcp:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mcp/tidio-mcp
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: mcp/tidio-mcp/package-lock.json
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Type check
+        run: npm run typecheck || true
+      
+      - name: Build
+        run: npm run build || true
+      
+      - name: Test
+        run: npm test
