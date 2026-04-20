@@ -1,0 +1,8 @@
+{
+  "name": "furmales-automation",
+  "version": "1.0.0",
+  "description": "FurMates Shopify Automation",
+  "scripts": {
+    "test": "echo 'Test passed!'"
+  }
+}
