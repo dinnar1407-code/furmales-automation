@@ -1,0 +1,35 @@
+{
+  "version": "1.0",
+  "description": "FurMates MCP Server Registry for OpenClaw / Playfish",
+  "mcpServers": {
+    "furmales-shopify": {
+      "command": "node",
+      "args": ["mcp/shopify-mcp/dist/index.js"],
+      "env": {
+        "SHOPIFY_SHOP_DOMAIN": "${SHOPIFY_SHOP_DOMAIN}",
+        "SHOPIFY_ACCESS_TOKEN": "${SHOPIFY_ACCESS_TOKEN}",
+        "SHOPIFY_API_VERSION": "2024-01"
+      },
+      "description": "FurMates Shopify Admin API — 21 tools (products, orders, customers, inventory)"
+  },
+    "furmales-tidio": {
+      "command": "node",
+      "args": ["mcp/tidio-mcp/dist/index.js"],
+      "env": {
+        "TIDIO_CLIENT_ID": "${TIDIO_CLIENT_ID}",
+        "TIDIO_CLIENT_SECRET": "${TIDIO_CLIENT_SECRET}"
+      },
+      "description": "FurMates Tidio Customer Service — 19 tools (conversations, messages, contacts)"
+    },
+    "furmales-whatsapp": {
+      "command": "node",
+      "args": ["mcp/whatsapp-mcp/dist/index.js"],
+      "env": {
+        "TWILIO_ACCOUNT_SID": "${TWILIO_ACCOUNT_SID}",
+        "TWILIO_AUTH_TOKEN": "${TWILIO_AUTH_TOKEN}",
+        "TWILIO_WHATSAPP_FROM": "${TWILIO_WHATSAPP_FROM}"
+      },
+      "description": "FurMates WhatsApp Business — 5 tools via Twilio (send, history, read, contact, order notifications)"
+    }
+  }
+}
