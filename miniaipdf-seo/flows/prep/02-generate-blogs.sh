@@ -24,11 +24,12 @@ if [ ! -f "$KEYWORDS_FILE" ]; then
     exit 1
 fi
 
-# Read keywords
+# Read keywords (use newline as delimiter)
 KEYWORDS=$(cat "$KEYWORDS_FILE" | jq -r '.keywords[].keyword')
 
 BLOG_COUNT=0
-for keyword in $KEYWORDS; do
+while IFS= read -r keyword; do
+    [ -z "$keyword" ] && continue
     BLOG_COUNT=$((BLOG_COUNT + 1))
     echo ""
     echo "--- Generating blog #$BLOG_COUNT: $keyword ---"
@@ -109,7 +110,7 @@ $keyword doesn't have to be complicated. With the right tools and this guide, yo
 EOF
     
     echo "✅ Created: $BLOG_DIR/content.mdx"
-done
+done <<< "$KEYWORDS"
 
 echo ""
 echo "═══════════════════════════════════════════════════"
